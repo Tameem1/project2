@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chatbot Widget Test</title>
+  <!-- Link to the Chatbot CSS -->
+  <link rel="stylesheet" href="/static/chatbot.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f4f4f9;
+    }
+
+    h1 {
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>Chatbot Widget Test</h1>
+
+  <!-- Include the Chatbot JavaScript -->
+
+
+<!-- Start of My Production Chatbot Embed -->
+<script>
+  (function() {
+      window.myChatBotConfig = {
+          chatbotId: "4c0a65a1-27e4-4c6e-81e1-146381619cf7",  // <-- Add the chatbot ID here
+          apiKey: "0vRy5_qTsv2oCYdCcAFNB6nN_2JlaZpaHDBRh9INbpo",
+          design: {
+              position: "bottom-right",
+              buttonColor: "#2c8ada"
+          }
+      };
+      var s = document.createElement('script');
+      s.src = "http://127.0.0.1:8000/static/chatbot.js";
+      document.head.appendChild(s);
+  })();
+  </script>
+  <!-- End of My Production Chatbot Embed -->
+  
+  
+</body>
+</html>
