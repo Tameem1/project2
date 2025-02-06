@@ -122,9 +122,6 @@ alembic upgrade head
 
 [View full API documentation](API_DOCS.md)
 
-## Database Relations
-
-```mermaid
 erDiagram
     CUSTOMER {
         UUID id PK
@@ -179,7 +176,7 @@ erDiagram
         UUID id PK
         UUID customer_id FK
         string invoice_number
-        numeric(10,2) amount
+        float amount
         string status
         datetime issued_at
         datetime due_date
