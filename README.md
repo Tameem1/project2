@@ -126,14 +126,82 @@ alembic upgrade head
 
 ```mermaid
 erDiagram
-    CUSTOMER ||--o{ USER : has
-    CUSTOMER ||--o{ CHATBOT : owns
-    CUSTOMER ||--o{ BILLING : has
-    CUSTOMER ||--o{ USAGE_TOKEN : tracks
-    CHATBOT ||--o{ DOCUMENT : contains
-    CHATBOT ||--o{ CHAT_HISTORY : maintains
-    USER ||--o{ CHAT_HISTORY : generates
-```
+    CUSTOMER {
+        UUID id PK
+        string name
+        string contact_email
+        json billing_info
+        int usage_tokens
+        datetime created_at
+        datetime updated_at
+    }
+    
+    USER {
+        UUID id PK
+        string username
+        string password_hash
+        UUID customer_id FK
+        datetime created_at
+        datetime updated_at
+    }
+
+    CHATBOT {
+        UUID id PK
+        UUID customer_id FK
+        string name
+        string description
+        string api_key
+        int demo_message_count
+        datetime created_at
+        datetime updated_at
+    }
+
+    DOCUMENT {
+        UUID id PK
+        UUID chatbot_id FK
+        string filename
+        string file_path
+        string file_type
+        json metadata_json
+        datetime uploaded_at
+    }
+
+    CHAT_HISTORY {
+        UUID id PK
+        UUID chatbot_id FK
+        UUID user_id FK
+        text question
+        text answer
+        datetime timestamp
+    }
+
+    BILLING {
+        UUID id PK
+        UUID customer_id FK
+        string invoice_number
+        numeric(10,2) amount
+        string status
+        datetime issued_at
+        datetime due_date
+    }
+
+    USAGE_TOKEN {
+        UUID id PK
+        UUID customer_id FK
+        int tokens_used
+        int tokens_remaining
+        int input_tokens_used
+        int output_tokens_used
+        datetime last_updated
+    }
+
+    CUSTOMER ||--o{ USER : "has"
+    CUSTOMER ||--o{ CHATBOT : "owns"
+    CUSTOMER ||--o{ BILLING : "has"
+    CUSTOMER ||--o{ USAGE_TOKEN : "tracks"
+    CHATBOT ||--o{ DOCUMENT : "contains"
+    CHATBOT ||--o{ CHAT_HISTORY : "maintains"
+    USER ||--o{ CHAT_HISTORY : "generates"
 
 **Key Relationships**:
 - Customers have multiple Users and Chatbots
