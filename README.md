@@ -122,6 +122,9 @@ alembic upgrade head
 
 [View full API documentation](API_DOCS.md)
 
+## Database Relations
+
+```mermaid
 erDiagram
     CUSTOMER {
         UUID id PK
@@ -199,6 +202,7 @@ erDiagram
     CHATBOT ||--o{ DOCUMENT : "contains"
     CHATBOT ||--o{ CHAT_HISTORY : "maintains"
     USER ||--o{ CHAT_HISTORY : "generates"
+```
 
 **Key Relationships**:
 - Customers have multiple Users and Chatbots
