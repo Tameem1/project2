@@ -15,18 +15,16 @@ def get_customer_usage(
     user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """
-    GET /api/{customer_id}/usage
-    Retrieves the usage info (tokens used, remaining, etc.) for the 
-    authenticated customer's ID.
-    """
+    # Ensure the token's customer matches
     token_customer_id = user.get("customer_id")
     if token_customer_id != customer_id:
         raise HTTPException(status_code=403, detail="Unauthorized access to this customer data")
     
     usage = get_usage(db, customer_id)
     return {
-        "tokens_used": usage.tokens_used,
+        "tokens_used_total": usage.tokens_used,  # total usage
+        "tokens_used_input": usage.input_tokens_used,
+        "tokens_used_output": usage.output_tokens_used,
         "tokens_remaining": usage.tokens_remaining,
         "last_updated": usage.last_updated
     }

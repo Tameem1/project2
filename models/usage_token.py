@@ -14,5 +14,8 @@ class UsageToken(Base):
     tokens_used = Column(Integer, default=0)
     tokens_remaining = Column(Integer, default=0)
     last_updated = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    input_tokens_used = Column(Integer, default=0, nullable=False)
+    output_tokens_used = Column(Integer, default=0, nullable=False)
 
+    last_updated = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     customer = relationship("Customer", back_populates="usage")
