@@ -12,6 +12,8 @@ import ChatDemoPage from "./pages/ChatDemoPage";
 import IntegrationPage from "./pages/IntegrationPage";
 
 import ProtectedRoute from "./components/ProtectedRoute";
+import MyChatbotsPage from "./pages/MyChatbotsPage";
+import ChatHistoryPage from "./pages/ChatHistoryPage";
 
 function App() {
   return (
@@ -26,10 +28,27 @@ function App() {
           path="/"
           element={
             <ProtectedRoute>
+              <MyChatbotsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/create-chatbot"
+          element={
+            <ProtectedRoute>
               <LandingPage />
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/chatbots/:chatbotId"
+          element={
+            <ProtectedRoute>
+              <ChatHistoryPage />
+            </ProtectedRoute>
+          }
+        />
+        {/* Keep existing routes */}
         <Route
           path="/upload-ingest"
           element={

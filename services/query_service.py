@@ -99,7 +99,16 @@ def process_query(question: str, customer_id: str, chatbot_id: str, user_id: str
         consume_tokens(db, customer_id, input_tokens, output_tokens)
 
         # 9) Log chat history
-        log_chat(db, chatbot_id, user_id, question, answer)
+        log_chat(
+        db=db,
+        chatbot_id=chatbot_id,
+        user_id=user_id, 
+        question=question,
+        answer=answer,
+        input_tokens=input_tokens, 
+        output_tokens=output_tokens,
+        source_docs=[doc.metadata.get("source", "Unknown") for doc in source_docs]
+        )
 
         return {
             "answer": answer,

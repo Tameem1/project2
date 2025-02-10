@@ -6,13 +6,35 @@ from sqlalchemy.exc import SQLAlchemyError
 from uuid import UUID
 from models.chat_history import ChatHistory
 
-def log_chat(db: Session, chatbot_id: str, user_id: str, question: str, answer: str):
+def log_chat(
+    db: Session, 
+    chatbot_id: str, 
+    user_id: Optional[str], 
+    question: str, 
+    answer: str,
+    input_tokens: Optional[int] = None,
+    output_tokens: Optional[int] = None,
+    source_docs: Optional[list[str]] = None  # or a JSON-serializable type
+) -> ChatHistory:
+    """
+    Inserts a new row in chat_history with optional token usage or doc references.
+    """
     chat = ChatHistory(
         chatbot_id=chatbot_id,
         user_id=user_id,
         question=question,
         answer=answer
     )
+
+    # If these columns exist in ChatHistory, set them:
+    if input_tokens is not None:
+        chat.input_tokens = input_tokens
+    if output_tokens is not None:
+        chat.output_tokens = output_tokens
+    if source_docs is not None:
+        # e.g. store as JSON-serialized string
+        chat.source_docs = ", ".join(source_docs)
+
     db.add(chat)
     db.commit()
     db.refresh(chat)
