@@ -1,4 +1,5 @@
 // src/pages/IntegrationPage.jsx
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../utils/api";
@@ -16,16 +17,16 @@ export default function IntegrationPage() {
   useEffect(() => {
     const fetchSnippet = async () => {
       if (!chatbotId) {
-        // If there's no chatbot ID, redirect them or show error
         alert("No chatbot ID found in session. Please create a chatbot first.");
-        navigate("/"); // or navigate("/landing") if you prefer
+        // Navigate to "/" which loads MyChatbotsPage
+        navigate("/");
         return;
       }
       setLoading(true);
       try {
         // GET /api/chatbots/{chatbotId}/snippet
         const data = await apiFetch(`/api/chatbots/${chatbotId}/snippet`, {
-          method: "GET"
+          method: "GET",
         });
         if (!data.snippet) {
           alert("No snippet returned from server.");
@@ -43,7 +44,7 @@ export default function IntegrationPage() {
     fetchSnippet();
   }, [chatbotId, navigate]);
 
-  // Optional: copy snippet to clipboard
+  // Copy snippet to clipboard
   const handleCopySnippet = () => {
     if (!snippet) return;
     navigator.clipboard
@@ -70,7 +71,7 @@ export default function IntegrationPage() {
                 style={{
                   whiteSpace: "pre-wrap",
                   background: "#f9f9f9",
-                  padding: "10px"
+                  padding: "10px",
                 }}
               >
                 {snippet}
@@ -88,6 +89,11 @@ export default function IntegrationPage() {
       <div style={{ marginTop: "30px" }}>
         <button className="btn" onClick={() => navigate("/chat-demo")}>
           Back to Demo
+        </button>
+        
+        {/* New button to go back to the main page (MyChatbots) */}
+        <button className="btn" onClick={() => navigate("/")}>
+          Back to My Chatbots
         </button>
       </div>
     </div>
