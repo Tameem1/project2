@@ -16,7 +16,7 @@ export default function MyChatbotsPage() {
     fetchAllData();
   }, []);
 
-  const fetchAllData = async () => {
+  async function fetchAllData() {
     try {
       setLoading(true);
 
@@ -38,14 +38,13 @@ export default function MyChatbotsPage() {
       // 3) Also fetch usage info
       const usageData = await apiFetch(`/api/${customerId}/usage`);
       setUsage(usageData);
-
     } catch (error) {
       console.error("Failed to fetch chatbots or usage:", error);
       alert("Failed to load chatbots or usage. " + error.message);
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   const handleDeleteChatbot = async (chatbotId) => {
     if (!window.confirm("Are you sure you want to delete this chatbot?")) return;
@@ -55,7 +54,7 @@ export default function MyChatbotsPage() {
         method: "DELETE",
       });
       alert("Chatbot deleted successfully!");
-      // Re-fetch the chatbots list
+      // Re-fetch
       fetchAllData();
     } catch (err) {
       console.error("Error deleting chatbot:", err);
@@ -73,9 +72,11 @@ export default function MyChatbotsPage() {
       {/* Show usage info if we have it */}
       {usage && (
         <div style={{ margin: "10px 0", textAlign: "left" }}>
-          <p><strong>Total Tokens Used:</strong> {usage.tokens_used_total}</p>
+          <p><strong>Plan:</strong> {usage.plan_name || "N/A"}</p>
           <p><strong>Tokens Remaining:</strong> {usage.tokens_remaining}</p>
-          <p>Input Tokens: {usage.tokens_used_input}, Output Tokens: {usage.tokens_used_output}</p>
+          <p>Input Tokens Used: {usage.tokens_used_input}</p>
+          <p>Output Tokens Used: {usage.tokens_used_output}</p>
+          <p>Total Tokens Used: {usage.tokens_used_total}</p>
         </div>
       )}
 

@@ -16,6 +16,8 @@ import IntegrationPage from "./pages/IntegrationPage";
 import PricingPage from "./pages/PricingPage"; // pricing page import
 import ProtectedRoute from "./components/ProtectedRoute";
 import NavBar from "./components/NavBar"; // new NavBar import
+import PricingSuccessPage from "./pages/PricingSuccessPage";
+
 
 function App() {
   return (
@@ -101,6 +103,14 @@ function App() {
         />
         {/* Fallback */}
         <Route path="*" element={<LoginPage />} />
+        <Route
+          path="/pricing/success"
+          element={
+            <ProtectedRoute>
+              <PricingSuccessPage />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </div>
   );

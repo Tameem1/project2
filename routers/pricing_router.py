@@ -23,7 +23,7 @@ def get_pricing():
         for price in prices.data:
             plans.append({
                 "id": price.id,
-                "product": price.product,  # Contains details such as name, description, etc.
+                "product": price.product,  # product object includes name, etc.
                 "unit_amount": price.unit_amount,
                 "currency": price.currency,
                 "interval": price.recurring.interval,
@@ -53,7 +53,7 @@ def create_checkout_session(data: dict, db: Session = Depends(get_db)):
             mode="subscription",
             success_url=f"{BASE_URL}/pricing/success?session_id={{CHECKOUT_SESSION_ID}}",
             cancel_url=f"{BASE_URL}/pricing/cancel",
-            client_reference_id=customer_id,
+            client_reference_id=customer_id,  # so we know which customer this is
         )
         return {"session_url": session.url}
     except Exception as e:
@@ -63,7 +63,7 @@ def create_checkout_session(data: dict, db: Session = Depends(get_db)):
 async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     """
     Handles incoming Stripe webhook events (e.g. subscription updates).
-    Make sure to set STRIPE_WEBHOOK_SECRET in your environment.
+    We update the user's usage_tokens and store a "plan_name" in billing_info.
     """
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
@@ -72,24 +72,37 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
         event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
     except stripe.error.SignatureVerificationError:
         raise HTTPException(status_code=400, detail="Invalid signature")
-    
-    # Process subscription events to update customer token allotment.
+
     if event["type"] in ["customer.subscription.updated", "customer.subscription.created"]:
         subscription = event["data"]["object"]
         customer_stripe_id = subscription["customer"]
-        product_id = subscription["items"]["data"][0]["price"]["product"]
+        product_id = subscription["items"]["data"][0]["price"]["product"]  # e.g. "prod_BASIC_ID"
+
+        # Locate our Customer row by the stored Stripe customer ID
         customer = db.query(Customer).filter(
             Customer.billing_info["stripe_customer_id"].astext == customer_stripe_id
         ).first()
+
         if customer:
-            # Example mapping—replace these product IDs with your actual ones:
+            # We'll set usage_tokens and plan_name
+            billing_info = customer.billing_info or {}
             if product_id == "prod_BASIC_ID":
                 customer.usage_tokens = 1000000
+                billing_info["plan_name"] = "Basic"
             elif product_id == "prod_STANDARD_ID":
                 customer.usage_tokens = 2000000
+                billing_info["plan_name"] = "Standard"
             elif product_id == "prod_PREMIUM_ID":
                 customer.usage_tokens = 3000000
+                billing_info["plan_name"] = "Premium"
+            else:
+                # fallback if you have more plans
+                billing_info["plan_name"] = "Unknown"
+
+            # Save updated billing_info
+            customer.billing_info = billing_info
             db.commit()
+
     elif event["type"] in ["customer.subscription.deleted", "customer.subscription.cancelled"]:
         subscription = event["data"]["object"]
         customer_stripe_id = subscription["customer"]
@@ -97,26 +110,22 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
             Customer.billing_info["stripe_customer_id"].astext == customer_stripe_id
         ).first()
         if customer:
+            # Reset tokens to 0, remove plan_name
             customer.usage_tokens = 0
+            billing_info = customer.billing_info or {}
+            billing_info["plan_name"] = None
+            customer.billing_info = billing_info
             db.commit()
+
     return JSONResponse(content={"received": True})
 
-# -------------------------------
-# New endpoint: Setup test pricing plans
-# -------------------------------
 @router.post("/api/pricing/setup")
 def setup_pricing_plans():
     """
-    Creates three test pricing plans in Stripe:
-      - Basic: $9.99/month with 1,000,000 tokens
-      - Standard: $19.99/month with 2,000,000 tokens
-      - Premium: $29.99/month with 3,000,000 tokens
-      
-    This endpoint is for testing purposes only.
+    Example for creating test pricing plans in Stripe (optional).
     """
     try:
         plans = []
-
         # Basic plan
         basic_product = stripe.Product.create(
             name="Basic", 

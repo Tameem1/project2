@@ -14,35 +14,32 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      /**
-       * Since the backend expects form data (OAuth2PasswordRequestForm),
-       * we do a direct fetch call. Alternatively, we can adapt our apiFetch 
-       * to handle URLSearchParams, or we can add a specialized helper. 
-       */
+      // 1) Prepare form data
       const formData = new URLSearchParams();
       formData.append("username", username);
       formData.append("password", password);
 
+      // 2) POST /auth/token
       const response = await fetch(`${BASE_URL}/auth/token`, {
         method: "POST",
-        body: formData
+        body: formData,
       });
-
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(errorText || `HTTP ${response.status} - ${response.statusText}`);
+        throw new Error(errorText || `HTTP ${response.status}`);
       }
 
+      // 3) Parse token
       const data = await response.json();
-      // The response: { "access_token": "...", "token_type": "bearer" }
       const token = data.access_token;
       if (!token) {
         throw new Error("No access_token returned from server.");
       }
 
-      // Save token so future apiFetch calls attach it
+      // 4) Set token in localStorage
       setAuthToken(token);
 
+      // 5) Alert once, then navigate
       alert("Login successful!");
       navigate("/");
     } catch (err) {

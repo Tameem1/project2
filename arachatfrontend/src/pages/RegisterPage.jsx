@@ -5,8 +5,6 @@ import { apiFetch } from "../utils/api";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-
-  // Form state
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [customerName, setCustomerName] = useState("");
@@ -18,15 +16,14 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // Construct the request body matching your FastAPI pydantic model
       await apiFetch("/auth/register", {
         method: "POST",
         body: {
           username,
           password,
           customer_name: customerName,
-          contact_email: contactEmail
-        }
+          contact_email: contactEmail,
+        },
       });
 
       alert("Registration successful! You can now log in.");
