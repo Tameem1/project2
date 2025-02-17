@@ -20,4 +20,4 @@ class Customer(Base):
     users = relationship("User", back_populates="customer")
     chatbots = relationship("Chatbot", back_populates="customer")
     billing_records = relationship("Billing", back_populates="customer")
-    usage = relationship("UsageToken", back_populates="customer")
+    usage_records = relationship("UsageToken", back_populates="customer")
