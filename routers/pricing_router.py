@@ -18,7 +18,7 @@ def get_pricing():
     Returns a list of active pricing plans.
     """
     try:
-        prices = stripe.prices.list(active=True, limit=10, expand=["data.product"])
+        prices = stripe.Price.list(active=True, limit=10, expand=["data.product"])
         plans = []
         for price in prices.data:
             plans.append({
@@ -44,7 +44,7 @@ def create_checkout_session(data: dict, db: Session = Depends(get_db)):
     if not customer_id or not price_id:
         raise HTTPException(status_code=400, detail="customer_id and price_id are required")
     try:
-        session = stripe.checkout.sessions.create(
+        session = stripe.checkout.Session.create(
             payment_method_types=["card"],
             line_items=[{
                 "price": price_id,
@@ -100,3 +100,86 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
             customer.usage_tokens = 0
             db.commit()
     return JSONResponse(content={"received": True})
+
+# -------------------------------
+# New endpoint: Setup test pricing plans
+# -------------------------------
+@router.post("/api/pricing/setup")
+def setup_pricing_plans():
+    """
+    Creates three test pricing plans in Stripe:
+      - Basic: $9.99/month with 1,000,000 tokens
+      - Standard: $19.99/month with 2,000,000 tokens
+      - Premium: $29.99/month with 3,000,000 tokens
+      
+    This endpoint is for testing purposes only.
+    """
+    try:
+        plans = []
+
+        # Basic plan
+        basic_product = stripe.Product.create(
+            name="Basic", 
+            description="Basic plan with 1,000,000 tokens per month"
+        )
+        basic_price = stripe.Price.create(
+            product=basic_product.id,
+            unit_amount=999,  # $9.99 in cents
+            currency="usd",
+            recurring={"interval": "month", "trial_period_days": 7}
+        )
+        plans.append({
+            "id": basic_price.id,
+            "product": {"name": basic_product.name, "description": basic_product.description},
+            "unit_amount": basic_price.unit_amount,
+            "currency": basic_price.currency,
+            "interval": basic_price.recurring.interval,
+            "trial_period_days": basic_price.recurring.trial_period_days,
+            "token_allotment": 1000000
+        })
+
+        # Standard plan
+        standard_product = stripe.Product.create(
+            name="Standard", 
+            description="Standard plan with 2,000,000 tokens per month"
+        )
+        standard_price = stripe.Price.create(
+            product=standard_product.id,
+            unit_amount=1999,  # $19.99 in cents
+            currency="usd",
+            recurring={"interval": "month", "trial_period_days": 7}
+        )
+        plans.append({
+            "id": standard_price.id,
+            "product": {"name": standard_product.name, "description": standard_product.description},
+            "unit_amount": standard_price.unit_amount,
+            "currency": standard_price.currency,
+            "interval": standard_price.recurring.interval,
+            "trial_period_days": standard_price.recurring.trial_period_days,
+            "token_allotment": 2000000
+        })
+
+        # Premium plan
+        premium_product = stripe.Product.create(
+            name="Premium", 
+            description="Premium plan with 3,000,000 tokens per month"
+        )
+        premium_price = stripe.Price.create(
+            product=premium_product.id,
+            unit_amount=2999,  # $29.99 in cents
+            currency="usd",
+            recurring={"interval": "month", "trial_period_days": 7}
+        )
+        plans.append({
+            "id": premium_price.id,
+            "product": {"name": premium_product.name, "description": premium_product.description},
+            "unit_amount": premium_price.unit_amount,
+            "currency": premium_price.currency,
+            "interval": premium_price.recurring.interval,
+            "trial_period_days": premium_price.recurring.trial_period_days,
+            "token_allotment": 3000000
+        })
+
+        return {"plans": plans}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

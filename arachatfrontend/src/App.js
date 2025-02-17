@@ -13,12 +13,14 @@ import UploadIngestPage from "./pages/UploadIngestPage";
 import ModelSelectionPage from "./pages/ModelSelectionPage";
 import ChatDemoPage from "./pages/ChatDemoPage";
 import IntegrationPage from "./pages/IntegrationPage";
-import PricingPage from "./pages/PricingPage"; // new import
+import PricingPage from "./pages/PricingPage"; // pricing page import
 import ProtectedRoute from "./components/ProtectedRoute";
+import NavBar from "./components/NavBar"; // new NavBar import
 
 function App() {
   return (
     <div className="app-container">
+      <NavBar />
       <Routes>
         {/* Public routes */}
         <Route path="/register" element={<RegisterPage />} />
