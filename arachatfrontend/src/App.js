@@ -1,34 +1,30 @@
-// src/App.js
-
+// arachatfrontend/src/App.js
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 
-// Public pages
+// Import your pages
 import RegisterPage from "./pages/RegisterPage";
 import LoginPage from "./pages/LoginPage";
-
-// Protected pipeline pages
 import MyChatbotsPage from "./pages/MyChatbotsPage";
 import LandingPage from "./pages/LandingPage";
+import ChatHistoryPage from "./pages/ChatHistoryPage";
+import DocumentManagementPage from "./pages/DocumentManagementPage";
 import UploadIngestPage from "./pages/UploadIngestPage";
 import ModelSelectionPage from "./pages/ModelSelectionPage";
 import ChatDemoPage from "./pages/ChatDemoPage";
 import IntegrationPage from "./pages/IntegrationPage";
-import ChatHistoryPage from "./pages/ChatHistoryPage";
-import DocumentManagementPage from "./pages/DocumentManagementPage";
-
-// Higher-order component to wrap protected routes
+import PricingPage from "./pages/PricingPage"; // new import
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
     <div className="app-container">
       <Routes>
-        {/* Public routes (no auth required) */}
+        {/* Public routes */}
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/login" element={<LoginPage />} />
 
-        {/* Protected routes (user must be logged in) */}
+        {/* Protected routes */}
         <Route
           path="/"
           element={
@@ -53,7 +49,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-        {/* NEW ROUTE: Document management */}
         <Route
           path="/chatbots/:chatbotId/documents"
           element={
@@ -62,7 +57,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/upload-ingest"
           element={
@@ -95,8 +89,15 @@ function App() {
             </ProtectedRoute>
           }
         />
-
-        {/* Fallback: If no route matches, go to Login */}
+        <Route
+          path="/pricing"
+          element={
+            <ProtectedRoute>
+              <PricingPage />
+            </ProtectedRoute>
+          }
+        />
+        {/* Fallback */}
         <Route path="*" element={<LoginPage />} />
       </Routes>
     </div>

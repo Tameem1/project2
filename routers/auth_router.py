@@ -1,13 +1,11 @@
 # routers/auth_router.py
 from fastapi import APIRouter, HTTPException, Depends
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
-from services.auth_service import register_user, authenticate_user
+from services.auth_service import register_user, create_jwt_token
 from db.session import get_db
 from sqlalchemy.orm import Session
 
 auth_router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
 class RegisterRequest(BaseModel):
     username: str
@@ -24,9 +22,10 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
         contact_email=request.contact_email,
         db=db
     )
-    return {"message": "User registered successfully"}
-
-@auth_router.post("/token")
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    token = authenticate_user(form_data.username, form_data.password, db)
-    return {"access_token": token, "token_type": "bearer"}
+    # Create a JWT token for the newly registered user:
+    token = create_jwt_token({
+        "sub": user.username,
+        "customer_id": str(user.customer_id),
+        "user_id": str(user.id)
+    })
+    return {"message": "User registered successfully", "token": token}
