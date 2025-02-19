@@ -17,7 +17,7 @@ import PricingPage from "./pages/PricingPage"; // pricing page import
 import ProtectedRoute from "./components/ProtectedRoute";
 import NavBar from "./components/NavBar"; // new NavBar import
 import PricingSuccessPage from "./pages/PricingSuccessPage";
-
+import CancelPlanPage from "./pages/CancelPlanPage";
 
 function App() {
   return (
@@ -108,6 +108,14 @@ function App() {
           element={
             <ProtectedRoute>
               <PricingSuccessPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route 
+          path="/cancel-plan" 
+          element={
+            <ProtectedRoute>
+              <CancelPlanPage />
             </ProtectedRoute>
           }
         />

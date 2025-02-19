@@ -5,7 +5,7 @@ from authlib.integrations.starlette_client import OAuth, OAuthError
 import os
 from sqlalchemy.orm import Session
 from db.session import get_db
-from services.auth_service import register_user_from_oauth, create_jwt_token
+# from services.auth_service import register_user_from_oauth, create_jwt_token
 import logging
 
 router = APIRouter()
@@ -66,7 +66,7 @@ async def oauth_callback(provider: str, request: Request, db: Session = Depends(
         raise HTTPException(status_code=400, detail="Failed to obtain user info from provider")
     
     # Create (or retrieve) the user from your database.
-    user = register_user_from_oauth(user_info, db)
+    # user = register_user_from_oauth(user_info, db)
     jwt_token = create_jwt_token({
         "sub": user.username,
         "customer_id": str(user.customer_id),

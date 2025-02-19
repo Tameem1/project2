@@ -36,14 +36,16 @@ export async function apiFetch(endpoint, { method = "GET", body, isFormData = fa
     body: isFormData ? body : body ? JSON.stringify(body) : null,
   });
 
-  // If not okay, throw an error
   if (!res.ok) {
-    // Attempt to parse error text/JSON
     const errorText = await res.text();
+    if (errorText.includes("Token expired")) {
+      alert("Your session has expired. Click OK to login.");
+      window.location.href = "/login";
+      return; // Prevent further processing after redirect
+    }
     throw new Error(errorText || `HTTP ${res.status} - ${res.statusText}`);
   }
 
-  // Attempt to parse JSON; if none, return empty object
   try {
     return await res.json();
   } catch (err) {

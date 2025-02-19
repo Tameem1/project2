@@ -5,23 +5,29 @@ import { apiFetch } from "../utils/api";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [customerName, setCustomerName] = useState("");
+  const [businessName, setBusinessName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // New state for error display:
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMessage(""); // clear any previous error
 
     try {
+      // POST /auth/register with the proper field names
       await apiFetch("/auth/register", {
         method: "POST",
         body: {
           username,
           password,
-          customer_name: customerName,
+          business_name: businessName,
           contact_email: contactEmail,
         },
       });
@@ -30,7 +36,8 @@ export default function RegisterPage() {
       navigate("/login");
     } catch (err) {
       console.error("Registration error:", err);
-      alert(`Registration failed: ${err.message}`);
+      // Display the error message returned from the backend
+      setErrorMessage(err.message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -39,6 +46,14 @@ export default function RegisterPage() {
   return (
     <div className="page-container">
       <h1>Register</h1>
+
+      {/* Display error message if present */}
+      {errorMessage && (
+        <p style={{ color: "red", marginBottom: "10px" }}>
+          {errorMessage}
+        </p>
+      )}
+
       <form onSubmit={handleRegister}>
         <div style={{ marginBottom: "10px" }}>
           <label>Username: </label><br/>
@@ -63,11 +78,11 @@ export default function RegisterPage() {
         </div>
 
         <div style={{ marginBottom: "10px" }}>
-          <label>Customer Name: </label><br/>
+          <label>Business Name: </label><br/>
           <input
             type="text"
-            value={customerName}
-            onChange={(e) => setCustomerName(e.target.value)}
+            value={businessName}
+            onChange={(e) => setBusinessName(e.target.value)}
             required
             disabled={loading}
           />
@@ -91,8 +106,11 @@ export default function RegisterPage() {
 
       <div className="spacer"></div>
       <p>
-        Already have an account? 
-        <span style={{ color: "blue", cursor: "pointer" }} onClick={() => navigate("/login")}>
+        Already have an account?{" "}
+        <span
+          style={{ color: "blue", cursor: "pointer" }}
+          onClick={() => navigate("/login")}
+        >
           Log In
         </span>
       </p>

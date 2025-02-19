@@ -7,7 +7,6 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from models.user import User
 from models.customer import Customer
-from db.session import get_db
 
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
@@ -31,50 +30,57 @@ def decode_jwt_token(token: str) -> dict:
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-def register_user(username: str, password: str, customer_name: str, contact_email: str, db: Session):
-    if db.query(User).filter(User.username == username).first():
-        raise HTTPException(status_code=400, detail="Username already exists")
-    
-    customer = db.query(Customer).filter(Customer.name == customer_name).first()
-    if not customer:
-        customer = Customer(name=customer_name, contact_email=contact_email)
-        db.add(customer)
-        db.commit()
-        db.refresh(customer)
-    
-    hashed_password = hash_password(password)
-    user = User(username=username, password_hash=hashed_password, customer_id=customer.id)
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return user
+def register_user(username: str, password: str, business_name: str, contact_email: str, db: Session):
+    """
+    Creates a new User and Customer record. Enforces:
+      - Unique username (no duplicates in 'users')
+      - Unique contact_email (no duplicates in 'customers')
+      - Disallows the case where username == password
+      - Allows repeated business_name (Customer.name)
+    """
+    # Disallow password equal to username for security reasons
+    if username == password:
+        raise HTTPException(
+            status_code=400,
+            detail="Registration failed: password cannot be the same as username."
+        )
 
-def register_user_from_oauth(user_info: dict, db: Session):
-    """
-    Given user info from an OAuth provider, register the user if they don't exist.
-    Expects at least an "email" key; uses "name" (or the email prefix) as the username.
-    """
-    email = user_info.get("email")
-    username = user_info.get("name") or email.split('@')[0]
-    user = db.query(User).filter(User.username == username).first()
-    if user:
-        return user
-    # Create a customer if one does not exist.
-    customer_name = f"{username}'s Customer"
-    customer = db.query(Customer).filter(Customer.name == customer_name).first()
-    if not customer:
-        customer = Customer(name=customer_name, contact_email=email)
-        db.add(customer)
-        db.commit()
-        db.refresh(customer)
-    # Create the user using a random dummy password
-    import os
-    dummy_password = os.urandom(16).hex()
-    hashed_password = hash_password(dummy_password)
-    user = User(username=username, password_hash=hashed_password, customer_id=customer.id)
+    # Check if the username is already taken
+    existing_user = db.query(User).filter(User.username == username).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail="Registration failed: This username is already taken."
+        )
+
+    # Check if the contact_email is already used by any customer
+    existing_customer = db.query(Customer).filter(Customer.contact_email == contact_email).first()
+    if existing_customer:
+        raise HTTPException(
+            status_code=400,
+            detail="Registration failed: This email is already registered."
+        )
+
+    # Create the Customer (business_name can be repeated)
+    new_customer = Customer(
+        name=business_name,
+        contact_email=contact_email,
+    )
+    db.add(new_customer)
+    db.commit()
+    db.refresh(new_customer)
+
+    # Hash password and create the User
+    hashed_password = hash_password(password)
+    user = User(
+        username=username,
+        password_hash=hashed_password,
+        customer_id=new_customer.id
+    )
     db.add(user)
     db.commit()
     db.refresh(user)
+
     return user
 
 def authenticate_user(username: str, password: str, db: Session):
