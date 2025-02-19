@@ -1,5 +1,6 @@
 # models/customer.py
 from sqlalchemy import Column, String, DateTime, Integer, JSON
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 import uuid
@@ -12,7 +13,7 @@ class Customer(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String, unique=True, nullable=False)
     contact_email = Column(String, unique=True, nullable=False)
-    billing_info = Column(JSON, nullable=True)  # Alternatively, create a separate Billing table
+    billing_info = Column(JSONB, nullable=True)  # Alternatively, create a separate Billing table
     usage_tokens = Column(Integer, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
