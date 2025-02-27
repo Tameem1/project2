@@ -4,29 +4,32 @@ import { useNavigate } from "react-router-dom";
 import DemoChatInterface from "../components/DemoChatInterface";
 import LogoutButton from "../components/LogoutButton";
 
+/**
+ * ChatDemoPage: uses DemoChatInterface but now calls the real usage-based route
+ */
 export default function ChatDemoPage() {
   const navigate = useNavigate();
 
-  // We assume chatbot_id was stored in sessionStorage
+  // We assume you stored the chatbot ID in sessionStorage (or fetch from an API)
   const chatbotId = sessionStorage.getItem("chatbot_id");
 
   const handleIntegrateClick = () => {
-    // Make sure we have a chatbot ID
     if (!chatbotId) {
       alert("No chatbot ID found. Please create a chatbot first.");
       return;
     }
-    // Navigate to /integration
     navigate("/integration");
   };
 
   return (
     <div className="page-container">
       <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <h1>Chat Demo (10-message limit)</h1>
+        <h1>Chat Demo</h1>
         <LogoutButton />
       </div>
-      <p>Test your chatbot in this limited demo environment (10 messages).</p>
+      <p>
+        Here is a demo interface that still consumes real usage tokens from your plan.
+      </p>
 
       <DemoChatInterface chatbotId={chatbotId} />
 
