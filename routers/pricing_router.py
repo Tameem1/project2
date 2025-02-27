@@ -16,7 +16,7 @@ stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "sk_test_XXXX")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "whsec_XXXX")
 BASE_URL = os.getenv("BASE_URL", "http://localhost:3000")
 
-# Example product IDs mapping (if used elsewhere)
+# Your product-to-plan mapping
 PLANS = {
     "prod_Rn3o1Du3ssKMNv": {"name": "Basic", "tokens_allotment": 1_000_000},
     "prod_Rn3oIo22pSBsy3": {"name": "Standard", "tokens_allotment": 2_000_000},
@@ -116,35 +116,25 @@ def cancel_subscription(
     if not db_customer:
         raise HTTPException(status_code=404, detail="Customer not found")
 
-    billing_info = db_customer.billing_info or {}
-    stripe_customer_id = billing_info.get("stripe_customer_id")
-    if not stripe_customer_id:
-        raise HTTPException(status_code=400, detail="No Stripe customer ID found for cancellation")
+    billing_info = dict(db_customer.billing_info) if db_customer.billing_info else {}
+    billing_info["plan_name"] = None
+    db_customer.billing_info = billing_info
+    db.commit()
+    db.refresh(db_customer)
 
-    # Retrieve active subscriptions for this customer
-    subscriptions = stripe.Subscription.list(customer=stripe_customer_id, status="active")
-    if not subscriptions.data:
-        raise HTTPException(status_code=400, detail="No active subscription found")
+    usage_record = db.query(UsageToken).filter(
+        UsageToken.customer_id == db_customer.id
+    ).first()
+    if usage_record:
+        usage_record.number_of_tokens = 1000
+        usage_record.tokens_remaining = usage_record.number_of_tokens - usage_record.tokens_used
+        db.commit()
 
-    # For simplicity, cancel the first active subscription found
-    sub_id = subscriptions.data[0].id
-    try:
-        canceled_subscription = stripe.Subscription.modify(sub_id, cancel_at_period_end=True)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-    return {
-        "message": "Subscription cancellation initiated. Your subscription will cancel at the end of your billing period.",
-        "subscription": canceled_subscription,
-    }
+    return {"message": "Subscription cancellation initiated. Your subscription will cancel at the end of your billing period.", "subscription": None}
 
 
 @router.post("/api/stripe/webhook")
 async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
-    """
-    Handles Stripe webhook events for subscription updates.
-    Updates local Customer and UsageToken records based on subscription events.
-    """
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")
 
@@ -169,7 +159,8 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
         if not db_customer:
             return {"status": "ignored"}
 
-        billing_info = db_customer.billing_info or {}
+        # Make a mutable copy of billing_info before updating
+        billing_info = dict(db_customer.billing_info) if db_customer.billing_info else {}
         plan_data = PLANS.get(product_id)
         if plan_data:
             billing_info["plan_name"] = plan_data["name"]
@@ -177,6 +168,10 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
         else:
             billing_info["plan_name"] = "Unknown"
             new_token_allotment = 1000
+
+        # Preserve the stripe_customer_id if not already present
+        if "stripe_customer_id" not in billing_info:
+            billing_info["stripe_customer_id"] = stripe_customer_id
 
         db_customer.billing_info = billing_info
         db.commit()
@@ -210,7 +205,7 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
         ).first()
 
         if db_customer:
-            billing_info = db_customer.billing_info or {}
+            billing_info = dict(db_customer.billing_info) if db_customer.billing_info else {}
             billing_info["plan_name"] = None
             db_customer.billing_info = billing_info
             db.commit()

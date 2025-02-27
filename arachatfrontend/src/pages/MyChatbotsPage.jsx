@@ -74,9 +74,9 @@ export default function MyChatbotsPage() {
         <div style={{ margin: "10px 0", textAlign: "left" }}>
           <p><strong>Plan:</strong> {usage.plan_name || "N/A"}</p>
           <p><strong>Tokens Remaining:</strong> {usage.tokens_remaining}</p>
-          <p>Input Tokens Used: {usage.tokens_used_input}</p>
+          {/* <p>Input Tokens Used: {usage.tokens_used_input}</p>
           <p>Output Tokens Used: {usage.tokens_used_output}</p>
-          <p>Total Tokens Used: {usage.tokens_used_total}</p>
+          <p>Total Tokens Used: {usage.tokens_used_total}</p> */}
         </div>
       )}
 
