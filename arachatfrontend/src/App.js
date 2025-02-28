@@ -18,6 +18,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import NavBar from "./components/NavBar"; // new NavBar import
 import PricingSuccessPage from "./pages/PricingSuccessPage";
 import CancelPlanPage from "./pages/CancelPlanPage";
+import UserProfilePage from "./pages/UserProfilePage"; 
 
 function App() {
   return (
@@ -98,6 +99,14 @@ function App() {
           element={
             <ProtectedRoute>
               <PricingPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <UserProfilePage />
             </ProtectedRoute>
           }
         />

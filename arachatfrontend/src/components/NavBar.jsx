@@ -20,6 +20,9 @@ export default function NavBar() {
 
   return (
     <nav style={navStyle}>
+     <Link to="/profile" style={linkStyle}>
+       Profile
+     </Link>
       <Link to="/" style={linkStyle}>
         My Chatbots
       </Link>

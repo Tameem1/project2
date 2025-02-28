@@ -15,6 +15,7 @@ from routers.usage_router import usage_router
 from routers.chatbot_router import chatbot_router
 from routers.chat_history_router import chat_history_router
 from routers.pricing_router import router as pricing_router
+from routers.user_router import user_router  
 
 app = FastAPI()
 
@@ -37,6 +38,7 @@ app.include_router(ingestion_router, prefix="/api", tags=["Ingestion"])
 app.include_router(billing_router, prefix="/api", tags=["Billing"])
 app.include_router(usage_router, prefix="/api", tags=["Usage"])
 app.include_router(chat_history_router, prefix="/api", tags=["Chat History"])
+app.include_router(user_router, prefix="/api", tags=["User"])
 
 # Comment out or remove this line if not using the old demo router:
 # app.include_router(demo_router, prefix="/api", tags=["Demo"])
@@ -47,3 +49,6 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # run the frontend: npm start in the frontend folder
 # Database changes: alembic revision --autogenerate -m "COMMENT-HERE"
 # Database update: alembic upgrade head 
+# Database access:  psql -U $(whoami) -d postgres
+# \l: list all databases, \dt: list all tables, \c move to another database, \d view table
+# When testing stripe on local host make sure to login to Stripe using: "stripe login", and listen to the webhook using: "stripe listen --forward-to localhost:8000/api/stripe/webhook"

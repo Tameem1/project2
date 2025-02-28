@@ -44,7 +44,8 @@ export default function CancelPlanPage() {
         <LogoutButton />
       </div>
       <p>
-        If you wish to cancel your subscription, click the button below. Your subscription will be canceled at the end of your billing period.
+        If you wish to cancel your subscription, click the button below. Your subscription will be
+        canceled <strong>at the end of the current billing period</strong>.
       </p>
       {message && (
         <p style={{ color: "green", marginBottom: "10px" }}>{message}</p>
