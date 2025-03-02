@@ -93,7 +93,7 @@ export default function MyChatbotsPage() {
           ) : (
             chatbots.map((chatbot) => (
               <div key={chatbot.id} className="chatbot-item">
-                {/* Clicking name goes to ChatHistoryPage */}
+                {/* Clicking name goes to Chatbotpage */}
                 <h3
                   style={{ cursor: "pointer", marginBottom: "5px" }}
                   onClick={() => navigate(`/chatbots/${chatbot.id}`)}

@@ -7,7 +7,7 @@ import RegisterPage from "./pages/RegisterPage";
 import LoginPage from "./pages/LoginPage";
 import MyChatbotsPage from "./pages/MyChatbotsPage";
 import LandingPage from "./pages/LandingPage";
-import ChatHistoryPage from "./pages/ChatHistoryPage";
+import ChatbotPage from "./pages/ChatbotPage";
 import DocumentManagementPage from "./pages/DocumentManagementPage";
 import UploadIngestPage from "./pages/UploadIngestPage";
 import ModelSelectionPage from "./pages/ModelSelectionPage";
@@ -50,7 +50,7 @@ function App() {
           path="/chatbots/:chatbotId"
           element={
             <ProtectedRoute>
-              <ChatHistoryPage />
+              <ChatbotPage />
             </ProtectedRoute>
           }
         />

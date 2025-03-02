@@ -1,5 +1,4 @@
 // src/pages/DocumentManagementPage.jsx
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { apiFetch } from "../utils/api";
@@ -13,19 +12,33 @@ export default function DocumentManagementPage() {
   const [documents, setDocuments] = useState([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
 
-  const [file, setFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [ingesting, setIngesting] = useState(false);
+  // Multiple file selection
+  const [files, setFiles] = useState([]);
 
-  // 1. On mount, fetch documents
+  // Progress bar states
+  const [progress, setProgress] = useState(0);
+  const [statusMessage, setStatusMessage] = useState("");
+  const [processing, setProcessing] = useState(false);
+
+  // Customer ID from JWT
+  const [customerId, setCustomerId] = useState("");
+
   useEffect(() => {
     fetchDocuments();
+
+    const token = localStorage.getItem("token");
+    if (token) {
+      const claims = parseJwt(token);
+      if (claims && claims.customer_id) {
+        setCustomerId(claims.customer_id);
+      }
+    }
   }, [chatbotId]);
 
+  // Fetch existing documents
   const fetchDocuments = async () => {
     try {
       setLoadingDocs(true);
-      // GET /api/chatbots/{chatbotId}/documents (You’ll add this in your backend)
       const data = await apiFetch(`/api/chatbots/${chatbotId}/documents`);
       setDocuments(data);
     } catch (err) {
@@ -36,15 +49,13 @@ export default function DocumentManagementPage() {
     }
   };
 
-  // 2. Delete a document
+  // Remove a document from the server
   const handleDelete = async (docId) => {
     try {
-      // DELETE /api/chatbots/{chatbotId}/documents/{docId}
       await apiFetch(`/api/chatbots/${chatbotId}/documents/${docId}`, {
         method: "DELETE",
       });
       alert("Document deleted successfully.");
-      // Refresh list
       fetchDocuments();
     } catch (err) {
       console.error("Error deleting document:", err);
@@ -52,63 +63,85 @@ export default function DocumentManagementPage() {
     }
   };
 
-  // 3. Upload a file
+  // File selection => append new files to existing
   const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+    if (e.target.files && e.target.files.length > 0) {
+      const newFiles = Array.from(e.target.files);
+      setFiles((prev) => [...prev, ...newFiles]);
     }
   };
 
-  const handleUpload = async () => {
-    if (!file) {
-      alert("Please select a file first!");
+  // Remove one file from the "to upload" list
+  const removeFile = (index) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  /**
+   * Single "Process" button:
+   * 1) Upload each file
+   * 2) Ingest
+   * 3) Update progress bar + messages
+   * 4) Refresh the doc list
+   */
+  const handleProcess = async () => {
+    if (!files.length) {
+      alert("Select at least one file to process!");
       return;
     }
-    try {
-      setUploading(true);
-      const formData = new FormData();
-      formData.append("file", file);
+    if (!customerId) {
+      alert("No customer ID found in token. Please log in again?");
+      return;
+    }
 
-      // POST /api/upload/{chatbotId}
-      const res = await apiFetch(`/api/upload/${chatbotId}`, {
+    try {
+      setProcessing(true);
+      setProgress(0);
+      setStatusMessage("Starting upload...");
+
+      const totalSteps = files.length + 1; // each file + 1 for ingestion
+      let currentStep = 0;
+
+      // 1) Upload each file
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        setStatusMessage(`Uploading file ${i + 1} of ${files.length}: ${file.name}`);
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        await apiFetch(`/api/upload/${chatbotId}`, {
+          method: "POST",
+          body: formData,
+          isFormData: true,
+        });
+
+        currentStep++;
+        setProgress(Math.round((currentStep / totalSteps) * 100));
+      }
+
+      // 2) Ingest
+      setStatusMessage("All files uploaded. Ingesting documents...");
+      await apiFetch(`/api/${customerId}/${chatbotId}/ingest`, {
         method: "POST",
-        body: formData,
-        isFormData: true
       });
-      alert("Upload success: " + res.message);
-      // Refresh document list
-      fetchDocuments();
+
+      currentStep++;
+      setProgress(Math.round((currentStep / totalSteps) * 100));
+      setStatusMessage("All done! Documents ingested successfully.");
+
+      // Refresh doc list
+      await fetchDocuments();
+      setFiles([]); // Clear out the local file list
     } catch (err) {
-      console.error(err);
-      alert("Upload failed: " + err.message);
+      console.error("Process error:", err);
+      alert("Error during process: " + err.message);
+      setStatusMessage("Error encountered. Please try again.");
     } finally {
-      setUploading(false);
+      setProcessing(false);
     }
   };
 
-  // 4. Re-ingest documents
-  const handleIngest = async () => {
-    try {
-      setIngesting(true);
-      // Need the customerId from token
-      const token = localStorage.getItem("token");
-      const claims = parseJwt(token);
-      const customerId = claims.customer_id;
-
-      // POST /api/{customerId}/{chatbotId}/ingest
-      const res = await apiFetch(`/api/${customerId}/${chatbotId}/ingest`, {
-        method: "POST"
-      });
-      alert("Ingest success: " + res.message);
-    } catch (err) {
-      console.error(err);
-      alert("Ingest failed: " + err.message);
-    } finally {
-      setIngesting(false);
-    }
-  };
-
-  // 5. Return to ChatHistory or MyChatbots
+  // Return to ChatHistory or MyChatbots
   const handleBackToHistory = () => {
     navigate(`/chatbots/${chatbotId}`);
   };
@@ -148,17 +181,59 @@ export default function DocumentManagementPage() {
 
       <hr />
 
-      <h2>Upload a New Document</h2>
-      <input type="file" onChange={handleFileChange} />
-      <button onClick={handleUpload} disabled={uploading}>
-        {uploading ? "Uploading..." : "Upload"}
-      </button>
+      <h2>Add or Update Documents</h2>
+      <p>Select multiple files, then click "Process" to upload and ingest in one go.</p>
 
-      <hr />
+      <input
+        type="file"
+        multiple
+        onChange={handleFileChange}
+        disabled={processing}
+      />
 
-      <h2>Re-Ingest Documents</h2>
-      <button onClick={handleIngest} disabled={ingesting}>
-        {ingesting ? "Ingesting..." : "Ingest"}
+      {/* Show selected files with remove buttons */}
+      {files.length > 0 && (
+        <div style={{ margin: "10px 0", textAlign: "left" }}>
+          <p>Files selected for upload:</p>
+          <ul>
+            {files.map((file, idx) => (
+              <li key={idx}>
+                <button onClick={() => removeFile(idx)}>Remove</button>{" "}
+                {file.name}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Progress + status */}
+      {processing && (
+        <div style={{ margin: "20px 0" }}>
+          <div
+            style={{
+              width: "100%",
+              height: "20px",
+              backgroundColor: "#e0e0df",
+              borderRadius: "10px",
+              marginBottom: "10px",
+            }}
+          >
+            <div
+              style={{
+                width: `${progress}%`,
+                height: "100%",
+                backgroundColor: "#007bff",
+                borderRadius: "10px",
+                transition: "width 0.3s ease",
+              }}
+            />
+          </div>
+          <p>{statusMessage}</p>
+        </div>
+      )}
+
+      <button onClick={handleProcess} disabled={processing}>
+        {processing ? "Processing..." : "Process"}
       </button>
     </div>
   );
