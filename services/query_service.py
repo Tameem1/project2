@@ -41,17 +41,19 @@ def initialize_prompt() -> tuple[PromptTemplate, ConversationBufferMemory]:
     )
     return prompt, memory
 
-def process_query(question: str, customer_id: str, chatbot_id: str, user_id: str, db: Session) -> dict:
+from uuid import UUID
+
+def process_query(question: str, customer_id: str, chatbot_id: UUID, user_id: str, db: Session) -> dict:
     """
-    Retrieves relevant chunks from the vector store, consumes tokens based on 
-    actual usage, logs the conversation, and returns the response.
+    Processes a user query by retrieving relevant documents, invoking the LLM,
+    consuming tokens, logging chat history, and returning the answer.
     """
     try:
         logging.info(f"Processing query: {question}")
 
         # 1) Initialize embeddings & retriever
         embeddings = get_embeddings()
-        persist_dir = get_vectorstore_path(customer_id, chatbot_id)
+        persist_dir = get_vectorstore_path(customer_id, str(chatbot_id))
         db_store = Chroma(
             persist_directory=persist_dir,
             embedding_function=embeddings,
@@ -61,15 +63,14 @@ def process_query(question: str, customer_id: str, chatbot_id: str, user_id: str
 
         # 2) Instantiate ChatFireworks
         llm = ChatFireworks(
-            api_key="fw_3ZfGXeDhjJfUxVHUVRBDfMeU",  # store securely in production
+            api_key="fw_3ZfGXeDhjJfUxVHUVRBDfMeU",  # Replace with secure storage in production
             model=MODEL_ID,
             temperature=0.7,
             max_tokens=1500,
             top_p=1.0,
         )
 
-        # 3) Count how many tokens the user question consumes
-        #    We'll treat the question as a "HumanMessage"
+        # 3) Count tokens for the input
         input_tokens = llm.get_num_tokens_from_messages([HumanMessage(content=question)])
         
         # 4) Build the QA chain
@@ -87,27 +88,25 @@ def process_query(question: str, customer_id: str, chatbot_id: str, user_id: str
         answer = response.get("result", "No answer available.")
         source_docs = response.get("source_documents", [])
 
-        # 6) Count how many tokens the answer used
-        #    We can simply get token IDs from the answer text:
+        # 6) Count tokens in the answer
         output_tokens = len(llm.get_token_ids(answer))
 
-        # 7) Combine input + output token usage
         total_tokens_used = input_tokens + output_tokens
         logging.info(f"Question tokens={input_tokens}, Answer tokens={output_tokens}, Total={total_tokens_used}")
 
-        # 8) Update usage in DB
+        # 7) Update usage in DB
         consume_tokens(db, customer_id, input_tokens, output_tokens)
 
-        # 9) Log chat history
+        # 8) Log chat history (note: chatbot_id is now a UUID)
         log_chat(
-        db=db,
-        chatbot_id=chatbot_id,
-        user_id=user_id, 
-        question=question,
-        answer=answer,
-        input_tokens=input_tokens, 
-        output_tokens=output_tokens,
-        source_docs=[doc.metadata.get("source", "Unknown") for doc in source_docs]
+            db=db,
+            chatbot_id=chatbot_id,
+            user_id=user_id, 
+            question=question,
+            answer=answer,
+            input_tokens=input_tokens, 
+            output_tokens=output_tokens,
+            source_docs=[doc.metadata.get("source", "Unknown") for doc in source_docs]
         )
 
         return {
